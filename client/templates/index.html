@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Chat</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <body>
+        <h1>Groups</h1>
+        <ul>
+            {{range .}}
+            <li>
+                <a href="/group/{{.UUID}}">{{.Name}}</a>
+            {{end}}
+            </li>
+        </ul>
+    </body>
+</html>
