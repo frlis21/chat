@@ -9,11 +9,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type GroupPageContent struct {
-	Group    *client.Group
-	Messages []*client.Message
-}
-
 var groups map[string]*client.Group = nil
 
 func homepage(w http.ResponseWriter, req *http.Request) {
@@ -26,7 +21,7 @@ func homepage(w http.ResponseWriter, req *http.Request) {
 	for _, ptr := range groups {
 		data = append(data, ptr)
 	}
-	fmt.Printf("%v\n", data)
+	// fmt.Printf("%v\n", data)
 	tmpl.Execute(w, data)
 }
 
@@ -51,8 +46,22 @@ func group(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	pageContent := GroupPageContent{g, g.GetMessages()}
-	tmpl.Execute(w, pageContent)
+	var page GroupPageContent
+	if req.Method == "" || req.Method == "GET" {
+		page = groupGetHandler(g)
+	} else if req.Method == "POST" {
+		page, err = groupPostHandler(g, req)
+		if err != nil {
+			fmt.Printf("%v\n", err)
+			w.Write([]byte("Error sending message\n"))
+			return
+		}
+	} else {
+		w.Write([]byte("Invalid Request Method"))
+		return
+	}
+
+	tmpl.Execute(w, page)
 }
 
 func main() {
