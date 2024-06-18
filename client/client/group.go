@@ -2,6 +2,8 @@ package client
 
 import (
 	"fmt"
+	"net/http"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -9,8 +11,9 @@ import (
 type Group struct {
 	Name         string
 	UUID         string
+	Antecedent   string
 	ErrorMessage string
-	Members      *[]*User
+	Relays       *[]*Relay
 }
 
 var defaultGroups map[string]*Group = nil
@@ -27,11 +30,11 @@ func setupGroups() map[string]*Group {
 }
 
 func NewGroup(name string) *Group {
-	return &Group{name, uuid.NewString(), "", &[]*User{}}
+	return &Group{name, uuid.NewString(), "", "", &[]*Relay{}}
 }
 
-func ExistingGroup(name, UUID string, members *[]*User) *Group {
-	return &Group{name, UUID, "", members}
+func ExistingGroup(name, UUID, antecedent string, relays *[]*Relay) *Group {
+	return &Group{name, UUID, antecedent, "", relays}
 }
 
 func GetGroups() map[string]*Group {
@@ -49,7 +52,39 @@ func (g *Group) GetMessages() []*Message {
 }
 
 func (g *Group) SendMessage(m *Message) error {
-	defaultMessages = append(defaultMessages, m)
+	requestBody := fmt.Sprintf(
+		`{"antecedent": "%v", "author": "%v%v%v", "body": "%v", "relays": %v}`,
+		g.Antecedent,
+		m.SentBy.Name, USER_SEPERATOR, m.SentBy.UUID,
+		m.Content,
+		strings.ReplaceAll(
+			strings.ReplaceAll(
+				strings.ReplaceAll(
+					fmt.Sprintf("%v", *g.Relays),
+					" ",
+					`", "`,
+				),
+				"[",
+				`["`,
+			),
+			"]",
+			`"]`,
+		),
+	)
+	fmt.Printf("%v\n", requestBody)
+	for _, relay := range *g.Relays {
+		resp, err := http.Post(
+			fmt.Sprintf("%v/posts/%v%v%v", relay, g.Name, RELAY_SEPERATOR, g.UUID),
+			JSON_CONTENT_TYPE,
+			strings.NewReader(requestBody),
+		)
+		if err != nil {
+			return err
+		}
+		if resp.StatusCode != 201 {
+			return fmt.Errorf("failed sending message to %v", relay)
+		}
+	}
 	return nil
 }
 
