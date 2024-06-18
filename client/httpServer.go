@@ -71,6 +71,7 @@ func group(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	} else {
+		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Write([]byte("Invalid Request Method"))
 		return
 	}
@@ -78,7 +79,7 @@ func group(w http.ResponseWriter, req *http.Request) {
 	tmpl.Execute(w, page)
 }
 
-func setup(w http.ResponseWriter, req *http.Request) {
+func initialSetup(w http.ResponseWriter, req *http.Request) {
 	if req.Method == "GET" || req.Method == "" {
 		tmpl, err := template.ParseFiles("templates/initial_setup.html")
 		if err != nil {
@@ -88,7 +89,7 @@ func setup(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		tmpl.Execute(w, nil)
-	} else {
+	} else if req.Method == "POST" {
 		err := userSetup(req)
 		if err != nil {
 			fmt.Printf("%v\n", err)
@@ -97,7 +98,39 @@ func setup(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		http.Redirect(w, req, "/", http.StatusSeeOther)
+	} else {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.Write([]byte("Invalid Request Method"))
+		return
 	}
+}
+
+func setupRelay(w http.ResponseWriter, req *http.Request) {
+	tmpl, err := template.ParseFiles("templates/relay_setup.html")
+	if err != nil {
+		fmt.Printf("%v\n", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Error loading page\n"))
+		return
+	}
+	page := RelayPageContent{}
+	if req.Method == "GET" || req.Method == "" {
+		page.Relays = client.GetRelays()
+	} else if req.Method == "POST" {
+		err := addRelay(req)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Failed creating relay"))
+			return
+		}
+		page.Relays = client.GetRelays()
+		http.Redirect(w, req, "/relay", http.StatusSeeOther)
+	} else {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.Write([]byte("Invalid Request Method"))
+		return
+	}
+	tmpl.Execute(w, page)
 }
 
 func main() {
@@ -106,7 +139,8 @@ func main() {
 		panic(fmt.Sprintf("Unable to create directory for data storage: %v", err))
 	}
 	http.HandleFunc("/group/{UUID}", group)
-	http.HandleFunc("/setup", setup)
+	http.HandleFunc("/setup", initialSetup)
+	http.HandleFunc("/relay", setupRelay)
 	http.HandleFunc("/", homepage)
 	http.ListenAndServe(":8080", nil)
 }

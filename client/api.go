@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 )
 
 type GroupPageContent struct {
@@ -15,6 +16,10 @@ type GroupPageContent struct {
 type HomePageContent struct {
 	User   *client.User
 	Groups []*client.Group
+}
+
+type RelayPageContent struct {
+	Relays []*client.Relay
 }
 
 func groupGetHandler(g *client.Group) GroupPageContent {
@@ -45,5 +50,20 @@ func userSetup(req *http.Request) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func addRelay(req *http.Request) error {
+	address := req.FormValue("address")
+	port, err := strconv.Atoi(req.FormValue("port"))
+	if err != nil {
+		return err
+	}
+	err = client.AddRelay(address, port)
+	if err != nil {
+		fmt.Printf("%v\n", err)
+		return err
+	}
+
 	return nil
 }

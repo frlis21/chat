@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Chat</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <body id="body">
+        <a href="/">Home</a>
+        <h1>Add Relay</h1>
+        <form method="post" id="relay_form">
+            <label for="relay_form_url">Relay URL/IP</label>
+            <br>
+            <input id="relay_form_url" name="address" placeholder="Relay URL/IP" type="text">
+            <br>
+            <br>
+            <label for="relay_form_port">Relay Port</label>
+            <br>
+            <input id="relay_form_port" name="port" placeholder="Relay Port" type="text">
+            <br>
+            <br>
+            <button type="submit">Submit</button>
+        </form>
+        <h1>Known Relays</h1>
+        <table>
+            <th>Address</th>
+            <th>Port</th>
+            {{range .Relays}}
+            <tr>
+                <td>{{.Address}}</td>
+                <td>{{.Port}}</td>
+            </tr>
+            {{end}}
+        </table>
+        <script id="script">
+            document.getElementById("relay_form").addEventListener("submit", event => {
+                var newRelay = {
+                    url: document.getElementById("relay_form_url").value,
+                    port: document.getElementById("relay_form_port").value
+                };
+                if (newRelay.url.length === 0 || newRelay.port.length === 0) {
+                    event.preventDefault();
+                    var errorMessage = document.getElementById("error_message")
+                    if (errorMessage === null) {
+                        errorMessage = document.createElement("strong");
+                        errorMessage.textContent = "Relay URL/IP or Relay Port is empty";
+                        errorMessage.id = "error_message"
+                        document.getElementById("relay_form").insertBefore(document.createElement("br"), null);
+                        document.getElementById("relay_form").insertBefore(errorMessage, null);
+                    } else {
+                        errorMessage.style.color = "white";
+                        setTimeout(() => errorMessage.style.color = "black", 100)
+                    }
+                }
+            });
+        </script>
+    </body>
+</html>
