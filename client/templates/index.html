@@ -6,9 +6,11 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
     </head>
     <body>
+        <h1>Welcome {{.User.Name}}</h1>
+        <a href="/relay">Relays</a>
         <h1>Groups</h1>
         <ul>
-            {{range .}}
+            {{range .Groups}}
             <li>
                 <a href="/group/{{.UUID}}">{{.Name}}</a>
             </li>

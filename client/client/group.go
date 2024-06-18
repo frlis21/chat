@@ -7,9 +7,10 @@ import (
 )
 
 type Group struct {
-	Name    string
-	UUID    string
-	Members *[]*User
+	Name         string
+	UUID         string
+	ErrorMessage string
+	Members      *[]*User
 }
 
 var defaultGroups map[string]*Group = nil
@@ -26,11 +27,11 @@ func setupGroups() map[string]*Group {
 }
 
 func NewGroup(name string) *Group {
-	return &Group{name, uuid.NewString(), &[]*User{}}
+	return &Group{name, uuid.NewString(), "", &[]*User{}}
 }
 
 func ExistingGroup(name, UUID string, members *[]*User) *Group {
-	return &Group{name, UUID, members}
+	return &Group{name, UUID, "", members}
 }
 
 func GetGroups() map[string]*Group {
@@ -41,10 +42,15 @@ func (g *Group) GetMessages() []*Message {
 	if defaultMessages != nil {
 		return defaultMessages
 	}
-	m1 := NewMessage("Message Content 1", &defaultUser)
-	m2 := NewMessage("Message Content 2", &defaultUser)
+	m1 := NewMessage("Message Content 1", NewUser("DEFAULT 1", ID_EMPTY))
+	m2 := NewMessage("Message Content 2", NewUser("DEFAULT 2", ID_EMPTY))
 	defaultMessages = []*Message{m1, m2}
 	return defaultMessages
+}
+
+func (g *Group) SendMessage(m *Message) error {
+	defaultMessages = append(defaultMessages, m)
+	return nil
 }
 
 func (g *Group) String() string {
