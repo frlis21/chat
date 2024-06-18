@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"os"
 
 	"github.com/google/uuid"
 )
@@ -100,6 +101,10 @@ func setup(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
+	err := os.MkdirAll(client.BASE_DATA_PATH, 0777)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to create directory for data storage: %v", err))
+	}
 	http.HandleFunc("/group/{UUID}", group)
 	http.HandleFunc("/setup", setup)
 	http.HandleFunc("/", homepage)

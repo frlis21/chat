@@ -9,7 +9,7 @@ import (
 
 const USER_FILE_PATH string = BASE_DATA_PATH + "/userdata"
 const ID_EMPTY string = ""
-const USER_SEPERATOR string = "\n"
+const USER_SEPERATOR string = ":"
 const MISSING_USER string = "user_missing"
 
 var currentUser *User = nil
@@ -40,7 +40,7 @@ func GetCurrentUser() (*User, error) {
 
 func SetUser(username string) error {
 	currentUser = NewUser(username, ID_EMPTY)
-	err := os.WriteFile(USER_FILE_PATH, []byte(currentUser.Name+USER_SEPERATOR+currentUser.UUID), 0744)
+	err := os.WriteFile(USER_FILE_PATH, []byte(currentUser.Name+USER_SEPERATOR+currentUser.UUID), 0777)
 	if err != nil {
 		return err
 	}
