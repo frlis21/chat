@@ -42,8 +42,8 @@ func (g *Group) GetMessages() []*Message {
 	if defaultMessages != nil {
 		return defaultMessages
 	}
-	m1 := NewMessage("Message Content 1", &defaultUser)
-	m2 := NewMessage("Message Content 2", &defaultUser)
+	m1 := NewMessage("Message Content 1", NewUser("DEFAULT 1", ID_EMPTY))
+	m2 := NewMessage("Message Content 2", NewUser("DEFAULT 2", ID_EMPTY))
 	defaultMessages = []*Message{m1, m2}
 	return defaultMessages
 }

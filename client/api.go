@@ -2,6 +2,7 @@ package main
 
 import (
 	"client/client"
+	"errors"
 	"fmt"
 	"net/http"
 )
@@ -9,6 +10,11 @@ import (
 type GroupPageContent struct {
 	Group    *client.Group
 	Messages []*client.Message
+}
+
+type HomePageContent struct {
+	User   *client.User
+	Groups []*client.Group
 }
 
 func groupGetHandler(g *client.Group) GroupPageContent {
@@ -24,7 +30,20 @@ func groupPostHandler(g *client.Group, req *http.Request) (GroupPageContent, err
 
 	content := req.FormValue("message")
 	// fmt.Printf("%v\n", content)
-	m := client.NewMessage(content, client.NewUser("NEW USERNAME", "127.0.0.1"))
+	user, err := client.GetCurrentUser()
+	if err != nil {
+		return GroupPageContent{}, errors.New(client.MISSING_USER)
+	}
+	m := client.NewMessage(content, user)
 	err = g.SendMessage(m)
 	return GroupPageContent{g, g.GetMessages()}, err
+}
+
+func userSetup(req *http.Request) error {
+	username := req.FormValue("username")
+	err := client.SetUser(username)
+	if err != nil {
+		return err
+	}
+	return nil
 }

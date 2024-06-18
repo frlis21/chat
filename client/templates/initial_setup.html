@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Chat</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <body id="body">
+        <h1>Welcome</h1>
+        <p>This is a decentralized chat application</p>
+        <p>To start using this app, please input a username</p>
+        <form method="post" id="username_form">
+            <input id="username_form_input" name="username" placeholder="Username">
+            <button type="submit">Submit</button>
+        </form>
+    </body>
+    <script id="script">
+        document.getElementById("username_form").addEventListener("submit", event => {
+            if (document.getElementById("username_form_input").value.length === 0) {
+                event.preventDefault();
+                var errorMessage = document.getElementById("error_message")
+                if (errorMessage === null) {
+                    errorMessage = document.createElement("strong");
+                    errorMessage.textContent = "Username must be at least 1 character";
+                    errorMessage.id = "error_message"
+                    document.getElementById("username_form").insertBefore(document.createElement("br"), null);
+                    document.getElementById("username_form").insertBefore(errorMessage, null);
+                } else {
+                    errorMessage.style.color = "white";
+                    setTimeout(() => errorMessage.style.color = "black", 100)
+                }
+            }
+        });
+    </script>
+</html>
