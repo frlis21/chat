@@ -30,7 +30,7 @@ func (s *TopicServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		} else if _, ok := seen[post.ID]; ok {
 			continue
 		}
-		init, ok := s.db.Get(post.ID)
+		init, ok := s.db.Get(post.Topic)
 		if ok && strings.HasPrefix(init.Content, name) {
 			seen[post.ID] = struct{}{}
 			// Remember: topics are "genesis blocks"
