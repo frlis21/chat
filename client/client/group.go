@@ -9,6 +9,8 @@ import (
 	"github.com/google/uuid"
 )
 
+const GROUPS_FILE_PATH string = BASE_DATA_PATH + "/groupdata"
+
 type Group struct {
 	Name         string
 	UUID         string
@@ -18,7 +20,6 @@ type Group struct {
 }
 
 var defaultGroups map[string]*Group = nil
-var defaultMessages []*Message = nil
 
 func setupGroups() map[string]*Group {
 	if defaultGroups != nil {
@@ -75,7 +76,7 @@ func (g *Group) SendMessage(m *Message) error {
 	requestBody := fmt.Sprintf(
 		`{"antecedent": "%v", "author": "%v%v%v", "body": "%v", "relays": %v}`,
 		g.Antecedent,
-		m.SentBy.Name, USER_SEPERATOR, m.SentBy.UUID,
+		m.Author.Name, USER_SEPERATOR, m.Author.UUID,
 		m.Content,
 		strings.ReplaceAll(
 			strings.ReplaceAll(
@@ -108,6 +109,10 @@ func (g *Group) SendMessage(m *Message) error {
 	return nil
 }
 
+func (g *Group) AddRelay(r *Relay) {
+	*g.Relays = append(*g.Relays, r)
+}
+
 func (g *Group) String() string {
-	return fmt.Sprintf("{\"Name\": \"%v\", \"UUID\": \"%v\"}", g.Name, g.UUID)
+	return fmt.Sprintf("%v%v%v", g.Name, ":", g.UUID)
 }

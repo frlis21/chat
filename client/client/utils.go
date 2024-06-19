@@ -1,6 +1,8 @@
 package client
 
 import (
+	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -20,7 +22,11 @@ func ReadFullResponse(r *http.Response) string {
 }
 
 func Decode(data string) map[string]*Message {
-	return make(map[string]*Message)
+	messages := make(map[string]*Message)
+	ms := make([]*Message, 0, 32)
+	json.Unmarshal([]byte(data), &ms)
+	fmt.Printf("%v\n", ms)
+	return messages
 }
 
 func Values[M ~map[K]V, K comparable, V any](m M) []V {

@@ -40,7 +40,7 @@ func groupPostHandler(g *client.Group, req *http.Request) (GroupPageContent, err
 	if err != nil {
 		return GroupPageContent{}, errors.New(client.MISSING_USER)
 	}
-	m := client.NewMessage(content, time.Now(), user)
+	m := client.NewMessage(fmt.Sprintf("%v", g), g.Antecedent, content, time.Now(), user)
 	err = g.SendMessage(m)
 	return GroupPageContent{g, g.GetMessages()}, err
 }
