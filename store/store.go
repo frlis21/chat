@@ -12,6 +12,10 @@ func New[K comparable, V any]() *Store[K, V] {
 	return &Store[K, V]{m: make(map[K]V)}
 }
 
+func FromMap[K comparable, V any](m map[K]V) *Store[K, V] {
+	return &Store[K, V]{m: m}
+}
+
 func (db *Store[K, V]) Put(k K, v V) (old V, ok bool) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
@@ -25,6 +29,17 @@ func (db *Store[K, V]) Get(k K) (val V, ok bool) {
 	defer db.mu.Unlock()
 	val, ok = db.m[k]
 	return val, ok
+}
+
+func (db *Store[K, V]) GetDefault(k K, d V) (val V, changed bool) {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+	v, ok := db.m[k]
+	if !ok {
+		db.m[k] = d
+		return d, true
+	}
+	return v, false
 }
 
 func (db *Store[K, V]) Keys() (keys []K) {

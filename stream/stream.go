@@ -4,21 +4,19 @@ package stream
 import "sync"
 
 type Stream[T any] struct {
-	buf   uint
 	mu    sync.Mutex
 	chans map[chan T]struct{}
 }
 
-func New[T any](n uint) *Stream[T] {
+func New[T any]() *Stream[T] {
 	return &Stream[T]{
-		buf: n,
 		chans: make(map[chan T]struct{}),
 	}
 }
 
-func (s *Stream[T]) Chan() chan T {
+func (s *Stream[T]) Chan(n uint) chan T {
 	s.mu.Lock()
-	ch := make(chan T, s.buf)
+	ch := make(chan T, n)
 	s.chans[ch] = struct{}{}
 	s.mu.Unlock()
 	return ch
@@ -38,8 +36,8 @@ func (s *Stream[T]) Wrap(ch chan T) {
 }
 
 func (s *Stream[T]) Receive(v T) {
-	var chans []chan T
 	s.mu.Lock()
+	chans := make([]chan T, 0, len(s.chans))
 	for ch, _ := range s.chans {
 		chans = append(chans, ch)
 	}

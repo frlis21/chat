@@ -47,7 +47,7 @@ func main() {
 	// Sequence number generation for SSE event IDs
 	var uidGen UIDGen
 	// One-many Post broadcast
-	posts := stream.New[Post](32)
+	posts := stream.New[Post]()
 
 	// HTTP client required by PublishServer to reconcile history
 	client := http.Client{

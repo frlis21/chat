@@ -95,7 +95,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Connection", "keep-alive")
 
 	ctx := req.Context()
-	ch := s.events.Chan()
+	ch := s.events.Chan(32)
 	context.AfterFunc(ctx, func() {
 		s.events.Close(ch)
 	})

@@ -31,7 +31,7 @@ func (s *ChainServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			break
 		}
 		chain = append(chain, p)
-		id = p.ID
+		id = p.Parent
 	}
 
 	enc := json.NewEncoder(w)
