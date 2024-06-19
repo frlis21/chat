@@ -13,6 +13,9 @@ import (
 var groups map[string]*client.Group = nil
 
 func homepage(w http.ResponseWriter, req *http.Request) {
+	// if req.Method == "POST" {
+	// 	groups := searchGroups(req)
+	// }
 	tmpl, err := template.ParseFiles("templates/index.html")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

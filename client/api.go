@@ -68,3 +68,10 @@ func addRelay(req *http.Request) error {
 
 	return nil
 }
+
+func searchGroups(req *http.Request) []*client.Group {
+	// for _, relay := range client.GetRelays() {
+	// 	client.
+	// }
+	return []*client.Group{}
+}
