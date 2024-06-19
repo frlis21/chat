@@ -14,11 +14,11 @@ import (
 const GROUPS_FILE_PATH string = BASE_DATA_PATH + "/groupdata"
 
 type Group struct {
-	Name         string
-	UUID         string
-	Antecedent   string
-	ErrorMessage string
-	Relays       *[]*Relay
+	Name         string    `json:"name"`
+	UUID         string    `json:"topic"`
+	Antecedent   string    `json:"-"`
+	ErrorMessage string    `json:"-"`
+	Relays       *[]*Relay `json:"-"`
 }
 
 var defaultGroups map[string]*Group = nil

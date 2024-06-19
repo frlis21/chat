@@ -2,6 +2,7 @@ package client
 
 import (
 	"chat/client/utils"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -62,10 +63,18 @@ func GetRelays() []*Relay {
 }
 
 func (r *Relay) GroupSearch(name string) []*Group {
-	resp, _ := http.Get(fmt.Sprintf("http://%v/topics", r))
-	data := utils.ReadFullResponse(resp)
-	fmt.Printf("%v\n", data)
-	return []*Group{}
+	resp, err := http.Get(fmt.Sprintf("http://%v/topics", r))
+	if err != nil {
+		fmt.Printf("%v: err: %v\n", r, err)
+		return []*Group{}
+	}
+	foundGroups := make([]*Group, 0, 10)
+	err = json.Unmarshal(utils.ReadFullResponse(resp), &foundGroups)
+	if err != nil {
+		return []*Group{}
+	}
+	fmt.Printf("status code: %v\ndata: %v\n", resp.StatusCode, foundGroups)
+	return foundGroups
 }
 
 func (r *Relay) String() string {
