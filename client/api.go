@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 type GroupPageContent struct {
@@ -39,7 +40,7 @@ func groupPostHandler(g *client.Group, req *http.Request) (GroupPageContent, err
 	if err != nil {
 		return GroupPageContent{}, errors.New(client.MISSING_USER)
 	}
-	m := client.NewMessage(content, user)
+	m := client.NewMessage(content, time.Now(), user)
 	err = g.SendMessage(m)
 	return GroupPageContent{g, g.GetMessages()}, err
 }
