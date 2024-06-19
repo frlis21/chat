@@ -1,7 +1,7 @@
 package main
 
 import (
-	"client/client"
+	"chat/client/client"
 	"errors"
 	"fmt"
 	"net/http"

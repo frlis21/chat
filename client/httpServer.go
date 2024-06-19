@@ -1,13 +1,15 @@
 package main
 
 import (
-	"client/client"
 	"fmt"
 	"html/template"
 	"net/http"
 	"os"
 
 	"github.com/google/uuid"
+
+	"chat/client/client"
+	"chat/stream"
 )
 
 var groups map[string]*client.Group = nil
