@@ -3,7 +3,7 @@ package client
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
+	"encoding/json"
 	"time"
 )
 
@@ -18,21 +18,25 @@ type Message struct {
 
 func NewMessage(topic, parent, content string, time time.Time, user *User) *Message {
 	h := sha256.New()
-	h.Write([]byte(topic))
 	h.Write([]byte(parent))
 	h.Write([]byte(user.Name))
 	h.Write([]byte(USER_SEPERATOR))
 	h.Write([]byte(user.UUID))
 	h.Write([]byte(content))
-	id := make([]byte, 0, 32)
-	h.Sum(id)
-	sha256.Sum256([]byte(fmt.Sprintf("%v%v%v%v%v%v", topic, parent, user.Name, USER_SEPERATOR, user.UUID, content)))
+	ts, _ := time.MarshalBinary()
+	h.Write(ts)
+	id := h.Sum(nil)
 	return &Message{
-		hex.Dump(id),
+		hex.EncodeToString(id),
 		topic,
 		parent,
 		user,
 		time,
 		content,
 	}
+}
+
+func (m *Message) String() string {
+	data, _ := json.Marshal(m)
+	return string(data)
 }

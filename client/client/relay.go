@@ -73,7 +73,9 @@ func (r *Relay) GroupSearch(name string) []*Group {
 	if err != nil {
 		return []*Group{}
 	}
-	fmt.Printf("status code: %v\ndata: %v\n", resp.StatusCode, foundGroups)
+	// g := foundGroups[0]
+	// fmt.Printf("%v, %v, %v, %v\n", g.Name, g.UUID, g.Antecedent, g.ErrorMessage)
+	// fmt.Printf("status code: %v\ndata: %v\n", resp.StatusCode, foundGroups)
 	return foundGroups
 }
 

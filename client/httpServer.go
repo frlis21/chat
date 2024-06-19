@@ -46,7 +46,9 @@ func homepage(w http.ResponseWriter, req *http.Request) {
 		w.Write([]byte("Error loading page\n"))
 		return
 	}
-	groups = client.GetGroups()
+	if len(groups) == 0 {
+		groups = client.GetGroups()
+	}
 	data := []*client.Group{}
 	for _, ptr := range groups {
 		data = append(data, ptr)
@@ -85,7 +87,9 @@ func viewGroup(w http.ResponseWriter, req *http.Request) {
 
 	var page GroupPageContent
 	if req.Method == "GET" || req.Method == "" {
-		fmt.Printf("%v\n", g)
+		// fmt.Printf("%v\n", g)
+		// messages := g.GetMessages()
+		// fmt.Printf("%v\n", messages[0].Author.UUID)
 		page = GroupPageContent{g, g.GetMessages()}
 	} else if req.Method == "POST" {
 		content := req.FormValue("message")

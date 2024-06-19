@@ -16,22 +16,10 @@ const GROUPS_FILE_PATH string = BASE_DATA_PATH + "/groupdata"
 
 type Group struct {
 	Name         string    `json:"name"`
-	UUID         string    `json:"topic"`
+	UUID         string    `json:"id"`
 	Antecedent   string    `json:"-"`
 	ErrorMessage string    `json:"-"`
 	Relays       *[]*Relay `json:"-"`
-}
-
-var defaultGroups map[string]*Group = nil
-
-func setupGroups() map[string]*Group {
-	if defaultGroups != nil {
-		return defaultGroups
-	}
-	g1 := NewGroup("Group Name 1")
-	g2 := NewGroup("Group Name 2")
-	defaultGroups = map[string]*Group{g1.UUID: g1, g2.UUID: g2}
-	return defaultGroups
 }
 
 func NewGroup(name string) *Group {
@@ -43,7 +31,7 @@ func ExistingGroup(name, UUID, antecedent string, relays *[]*Relay) *Group {
 }
 
 func GetGroups() map[string]*Group {
-	return setupGroups()
+	return make(map[string]*Group)
 }
 
 func CreateGroup(name string) *Group {
@@ -71,6 +59,7 @@ func CreateGroup(name string) *Group {
 			return nil
 		}
 	}
+	g.Antecedent = g.UUID
 	return g
 
 }
@@ -78,11 +67,13 @@ func CreateGroup(name string) *Group {
 func (g *Group) GetMessages() []*Message {
 	messages := make(map[string]*Message)
 	for _, relay := range GetRelays() {
-		resp, err := http.Get(fmt.Sprintf("http://%v/posts/%v%v%v", relay, g.Name, RELAY_SEPERATOR, g.UUID))
+		resp, err := http.Get(fmt.Sprintf("http://%v/posts?topic=%v", relay, g.UUID))
 		if err != nil {
+			fmt.Printf("%v\n", err)
 			return []*Message{}
 		}
-		if resp.StatusCode == http.StatusOK {
+		if resp.StatusCode != http.StatusOK {
+			fmt.Printf("%v\n", resp.StatusCode)
 			return []*Message{}
 		}
 		data := utils.ReadFullResponse(resp)
@@ -102,12 +93,16 @@ func (g *Group) GetMessages() []*Message {
 			return a.Timestamp.Compare(b.Timestamp)
 		},
 	)
-	return values
+	if len(values) > 0 {
+		g.Antecedent = values[len(values)-1].Id
+	}
+	return values[1:]
 }
 
 func (g *Group) SendMessage(m *Message) error {
 	requestBody, _ := json.Marshal(m)
 	fmt.Printf("%v\n", string(requestBody))
+	fmt.Printf("%v\n", g.Antecedent)
 	for _, relay := range GetRelays() {
 		resp, err := http.Post(
 			fmt.Sprintf("http://%v/posts", relay),
@@ -124,6 +119,7 @@ func (g *Group) SendMessage(m *Message) error {
 			return fmt.Errorf("failed sending message to %v", relay)
 		}
 	}
+	g.Antecedent = m.Id
 	return nil
 }
 
