@@ -27,11 +27,11 @@ func (s *ChainServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	for i := 0; i < length; i++ {
 		p, ok := s.DB.Get(id)
-		if !ok {
+		if !ok || id == p.Parent {
 			break
 		}
 		chain = append(chain, p)
-		id = p.ID
+		id = p.Parent
 	}
 
 	enc := json.NewEncoder(w)

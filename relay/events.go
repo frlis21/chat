@@ -44,13 +44,13 @@ func (s *EventServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	// Note: This implicitly "pauses" the stream (globally) until `ch` is read from.
 	// We might want some buffering if getting replay history is slow.
-	ch := s.Posts.Chan()
+	ch := s.Posts.Chan(32)
 	ctx := req.Context()
 	context.AfterFunc(ctx, func() {
 		s.Posts.Close(ch)
 	})
 
-	events := stream.New[sse.Event](32)
+	events := stream.New[sse.Event]()
 	go sse.New(events).ServeHTTP(w, req)
 
 	// Get posts to replay

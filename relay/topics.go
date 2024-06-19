@@ -7,7 +7,7 @@ import (
 )
 
 type TopicResponse struct {
-	Topic string `json:"topic"`
+	ID string `json:"id"`
 	Name  string `json:"name"`
 }
 
@@ -27,16 +27,16 @@ func (s *TopicServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		post, ok := s.db.Get(k)
 		if !ok {
 			continue
-		} else if _, ok := seen[post.Topic]; ok {
+		} else if _, ok := seen[post.ID]; ok {
 			continue
 		}
-		init, ok := s.db.Get(post.Topic)
+		init, ok := s.db.Get(post.ID)
 		if ok && strings.HasPrefix(init.Content, name) {
-			seen[post.Topic] = struct{}{}
+			seen[post.ID] = struct{}{}
 			// Remember: topics are "genesis blocks"
 			// and topic names are that block's content.
 			topics = append(topics, TopicResponse{
-				Topic: post.Topic,
+				ID: post.ID,
 				Name:  init.Content,
 			})
 		}

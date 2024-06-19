@@ -87,7 +87,11 @@ func (s *PublishServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// Genesis post
 	if newpost.ID == newpost.Topic {
 		w.WriteHeader(http.StatusCreated)
-		s.DB.Put(newpost.ID, newpost)
+		_, changed := s.DB.GetDefault(newpost.ID, newpost)
+		if !changed {
+			http.Error(w, "Topic exists", http.StatusConflict)
+			return
+		}
 		s.Posts.Receive(newpost)
 		return
 	}
