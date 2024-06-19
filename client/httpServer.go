@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 
 	"chat/client/client"
-	"chat/stream"
 )
 
 var groups map[string]*client.Group = nil
