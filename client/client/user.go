@@ -51,3 +51,7 @@ func SetUser(username string) error {
 func (u *User) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf(`"%v%v%v"`, u.Name, USER_SEPERATOR, u.UUID)), nil
 }
+
+func (u *User) String() string {
+	return fmt.Sprintf("%v%v%v", u.Name, USER_SEPERATOR, u.UUID)
+}

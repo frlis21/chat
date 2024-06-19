@@ -28,13 +28,17 @@ type RelayPageContent struct {
 	Relays []*client.Relay
 }
 
-var groups map[string]*client.Group = nil
+var groups map[string]*client.Group = make(map[string]*client.Group)
+var searchedGroups map[string]*client.Group = make(map[string]*client.Group)
 
 func homepage(w http.ResponseWriter, req *http.Request) {
 	var foundGroups []*client.Group = nil
 	if req.Method == "POST" {
 		foundGroups = client.SearchGroups(req)
 		fmt.Printf("%v\n", foundGroups)
+		for _, group := range foundGroups {
+			searchedGroups[group.UUID] = group
+		}
 	}
 	tmpl, err := template.ParseFiles("templates/index.html")
 	if err != nil {
@@ -90,7 +94,7 @@ func viewGroup(w http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			http.Redirect(w, req, "/setup", http.StatusSeeOther)
 		}
-		m := client.NewMessage(fmt.Sprintf("%v", g), g.Antecedent, content, time.Now(), user)
+		m := client.NewMessage(g.UUID, g.Antecedent, content, time.Now(), user)
 		err = g.SendMessage(m)
 		if err != nil {
 			fmt.Printf("%v\n", err)
@@ -108,6 +112,20 @@ func viewGroup(w http.ResponseWriter, req *http.Request) {
 }
 
 func joinGroup(w http.ResponseWriter, req *http.Request) {
+	id := req.PathValue("UUID")
+	err := uuid.Validate(id)
+	if err != nil {
+		w.Write([]byte("Invalid Group ID\n"))
+		return
+	}
+	g := searchedGroups[id]
+	err = g.JoinGroup()
+	if err != nil {
+		w.Write([]byte("Unable to join group\n"))
+	}
+	groups[g.UUID] = g
+	delete(searchedGroups, g.UUID)
+	http.Redirect(w, req, fmt.Sprintf("/group/view/%v", id), http.StatusSeeOther)
 
 }
 

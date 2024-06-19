@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -75,65 +76,50 @@ func CreateGroup(name string) *Group {
 }
 
 func (g *Group) GetMessages() []*Message {
-	// messages := make(map[string]*Message)
-	// for _, relay := range *g.Relays {
-	// 	resp, err := http.Get(fmt.Sprintf("http://%v/posts/%v%v%v", relay, g.Name, RELAY_SEPERATOR, g.UUID))
-	// 	if err != nil {
-	// 		return []*Message{}
-	// 	}
-	// 	if resp.StatusCode == http.StatusOK {
-	// 		return []*Message{}
-	// 	}
-	// 	data := utils.ReadFullResponse(resp)
-	// 	json.Unmarshal()
-	// 	for id, msg := range ms {
-	// 		_, ok := messages[id]
-	// 		if !ok {
-	// 			messages[id] = msg
-	// 		}
-	// 	}
-	// }
-	// values := utils.Values(messages)
-	// slices.SortFunc[[]*Message, *Message](
-	// 	values,
-	// 	func(a, b *Message) int {
-	// 		return a.Timestamp.Compare(b.Timestamp)
-	// 	},
-	// )
-	// return values
-	return []*Message{}
+	messages := make(map[string]*Message)
+	for _, relay := range GetRelays() {
+		resp, err := http.Get(fmt.Sprintf("http://%v/posts/%v%v%v", relay, g.Name, RELAY_SEPERATOR, g.UUID))
+		if err != nil {
+			return []*Message{}
+		}
+		if resp.StatusCode == http.StatusOK {
+			return []*Message{}
+		}
+		data := utils.ReadFullResponse(resp)
+		ms := make([]*Message, 32)
+		json.Unmarshal(data, &ms)
+		for _, m := range ms {
+			_, ok := messages[m.Id]
+			if !ok {
+				messages[m.Id] = m
+			}
+		}
+	}
+	values := utils.Values(messages)
+	slices.SortFunc(
+		values,
+		func(a, b *Message) int {
+			return a.Timestamp.Compare(b.Timestamp)
+		},
+	)
+	return values
 }
 
 func (g *Group) SendMessage(m *Message) error {
-	requestBody := fmt.Sprintf(
-		`{"antecedent": "%v", "author": "%v%v%v", "body": "%v", "relays": %v}`,
-		g.Antecedent,
-		m.Author.Name, USER_SEPERATOR, m.Author.UUID,
-		m.Content,
-		strings.ReplaceAll(
-			strings.ReplaceAll(
-				strings.ReplaceAll(
-					fmt.Sprintf("%v", *g.Relays),
-					" ",
-					`", "`,
-				),
-				"[",
-				`["`,
-			),
-			"]",
-			`"]`,
-		),
-	)
-	fmt.Printf("%v\n", requestBody)
-	for _, relay := range *g.Relays {
+	requestBody, _ := json.Marshal(m)
+	fmt.Printf("%v\n", string(requestBody))
+	for _, relay := range GetRelays() {
 		resp, err := http.Post(
-			fmt.Sprintf("http://%v/posts/%v%v%v", relay, g.Name, RELAY_SEPERATOR, g.UUID),
+			fmt.Sprintf("http://%v/posts", relay),
 			JSON_CONTENT_TYPE,
-			strings.NewReader(requestBody),
+			strings.NewReader(string(requestBody)),
 		)
 		if err != nil {
 			return err
 		}
+		fmt.Printf("status_code: %v\n", resp.StatusCode)
+		data := utils.ReadFullResponse(resp)
+		fmt.Printf("data: %v\n", string(data))
 		if resp.StatusCode != http.StatusCreated {
 			return fmt.Errorf("failed sending message to %v", relay)
 		}
@@ -154,6 +140,22 @@ func SearchGroups(req *http.Request) []*Group {
 		}
 	}
 	return utils.Values(foundGroups)
+}
+
+func (g *Group) JoinGroup() error {
+	user, _ := GetCurrentUser()
+	requestBody := strings.NewReader(fmt.Sprintf(`{"user_id": "%v", "topics": [%v]}`, user, g))
+	for _, relay := range GetRelays() {
+		_, err := http.Post(
+			fmt.Sprintf("http://%v/posts", relay),
+			JSON_CONTENT_TYPE,
+			requestBody,
+		)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (g *Group) AddRelay(r *Relay) {
