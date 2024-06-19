@@ -228,11 +228,12 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("Unable to create directory for data storage: %v", err))
 	}
+	port := ":" + os.Args[1]
 	http.HandleFunc("/group/view/{UUID}", viewGroup)
 	http.HandleFunc("/group/join/{UUID}", joinGroup)
 	http.HandleFunc("/group/create", createGroup)
 	http.HandleFunc("/setup", initialSetup)
 	http.HandleFunc("/relay", setupRelay)
 	http.HandleFunc("/", homepage)
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(port, nil)
 }
