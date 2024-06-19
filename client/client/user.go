@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -45,4 +46,8 @@ func SetUser(username string) error {
 		return err
 	}
 	return nil
+}
+
+func (u *User) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf(`"%v%v%v"`, u.Name, USER_SEPERATOR, u.UUID)), nil
 }

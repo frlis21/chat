@@ -7,23 +7,34 @@
     </head>
     <body>
         <h1>Welcome {{.User.Name}}</h1>
-        <a href="/relay">Relays</a>
+        <ul>
+            <li><a href="/relay">Relays</a></li>
+            <li><a href="/group/create">Create Group</a></li>
+        </ul>
         <h1>Groups</h1>
         <ul>
             {{range .Groups}}
-            <li>
-                <a href="/group/{{.UUID}}">{{.Name}}</a>
-            </li>
+                <li>
+                    <a href="/group/view/{{.UUID}}">{{.Name}}</a>
+                </li>
             {{end}}
         </ul>
         <h2>Search for Groups</h2>
         <form method="post" id="group_search">
             <label for="group_search_name">Group Name</label>
             <br>
-            <input id="group_search_name" name="name" placeholder="Group name" type="text">
+            <input id="group_search_name" name="group_name" placeholder="Group name" type="text">
             <br>
             <br>
             <button type="submit">Submit</button>
         </form>
+        <h3>Found Groups</h3>
+        <ul>
+            {{range .SearchedGroups}}
+                <li>
+                    <a href="/group/join/{{.UUID}}">{{.Name}}</a>
+                </li>
+            {{end}}
+        </ul>
     </body>
 </html>

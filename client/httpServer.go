@@ -5,18 +5,37 @@ import (
 	"html/template"
 	"net/http"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/google/uuid"
 
 	"chat/client/client"
 )
 
+type GroupPageContent struct {
+	Group    *client.Group
+	Messages []*client.Message
+}
+
+type HomePageContent struct {
+	User           *client.User
+	Groups         []*client.Group
+	SearchedGroups []*client.Group
+}
+
+type RelayPageContent struct {
+	Relays []*client.Relay
+}
+
 var groups map[string]*client.Group = nil
 
 func homepage(w http.ResponseWriter, req *http.Request) {
-	// if req.Method == "POST" {
-	// 	groups := searchGroups(req)
-	// }
+	var foundGroups []*client.Group = nil
+	if req.Method == "POST" {
+		foundGroups = client.SearchGroups(req)
+		fmt.Printf("%v\n", foundGroups)
+	}
 	tmpl, err := template.ParseFiles("templates/index.html")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -34,11 +53,11 @@ func homepage(w http.ResponseWriter, req *http.Request) {
 		http.Redirect(w, req, "/setup", http.StatusSeeOther)
 		return
 	}
-	pageContent := HomePageContent{user, data}
+	pageContent := HomePageContent{user, data, foundGroups}
 	tmpl.Execute(w, pageContent)
 }
 
-func group(w http.ResponseWriter, req *http.Request) {
+func viewGroup(w http.ResponseWriter, req *http.Request) {
 	tmpl, err := template.ParseFiles("templates/group.html")
 	if err != nil {
 		fmt.Printf("%v\n", err)
@@ -62,18 +81,23 @@ func group(w http.ResponseWriter, req *http.Request) {
 
 	var page GroupPageContent
 	if req.Method == "GET" || req.Method == "" {
-		page = groupGetHandler(g)
+		fmt.Printf("%v\n", g)
+		page = GroupPageContent{g, g.GetMessages()}
 	} else if req.Method == "POST" {
-		page, err = groupPostHandler(g, req)
+		content := req.FormValue("message")
+		// fmt.Printf("%v\n", content)
+		user, err := client.GetCurrentUser()
 		if err != nil {
-			if err.Error() == client.MISSING_USER {
-				http.Redirect(w, req, "/setup", http.StatusSeeOther)
-			} else {
-				fmt.Printf("%v\n", err)
-				w.Write([]byte("Error sending message\n"))
-			}
+			http.Redirect(w, req, "/setup", http.StatusSeeOther)
+		}
+		m := client.NewMessage(fmt.Sprintf("%v", g), g.Antecedent, content, time.Now(), user)
+		err = g.SendMessage(m)
+		if err != nil {
+			fmt.Printf("%v\n", err)
+			w.Write([]byte("Error sending message\n"))
 			return
 		}
+		page = GroupPageContent{g, g.GetMessages()}
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Write([]byte("Invalid Request Method"))
@@ -81,6 +105,38 @@ func group(w http.ResponseWriter, req *http.Request) {
 	}
 
 	tmpl.Execute(w, page)
+}
+
+func joinGroup(w http.ResponseWriter, req *http.Request) {
+
+}
+
+func createGroup(w http.ResponseWriter, req *http.Request) {
+	if req.Method == "GET" || req.Method == "" {
+		tmpl, err := template.ParseFiles("templates/create_group.html")
+		if err != nil {
+			fmt.Printf("%v\n", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error loading page\n"))
+			return
+		}
+		tmpl.Execute(w, nil)
+		return
+	} else if req.Method == "POST" {
+		groupName := req.FormValue("group_name")
+		g := client.CreateGroup(groupName)
+		if g == nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error creating group\n"))
+			return
+		}
+		groups[g.UUID] = g
+		http.Redirect(w, req, "/", http.StatusSeeOther)
+	} else {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.Write([]byte("Invalid Request Method"))
+		return
+	}
 }
 
 func initialSetup(w http.ResponseWriter, req *http.Request) {
@@ -94,7 +150,8 @@ func initialSetup(w http.ResponseWriter, req *http.Request) {
 		}
 		tmpl.Execute(w, nil)
 	} else if req.Method == "POST" {
-		err := userSetup(req)
+		username := req.FormValue("username")
+		err := client.SetUser(username)
 		if err != nil {
 			fmt.Printf("%v\n", err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -121,7 +178,14 @@ func setupRelay(w http.ResponseWriter, req *http.Request) {
 	if req.Method == "GET" || req.Method == "" {
 		page.Relays = client.GetRelays()
 	} else if req.Method == "POST" {
-		err := addRelay(req)
+		address := req.FormValue("address")
+		port, err := strconv.Atoi(req.FormValue("port"))
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Failed creating relay"))
+			return
+		}
+		err = client.AddRelay(address, port)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Failed creating relay"))
@@ -142,7 +206,9 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("Unable to create directory for data storage: %v", err))
 	}
-	http.HandleFunc("/group/{UUID}", group)
+	http.HandleFunc("/group/view/{UUID}", viewGroup)
+	http.HandleFunc("/group/join/{UUID}", joinGroup)
+	http.HandleFunc("/group/create", createGroup)
 	http.HandleFunc("/setup", initialSetup)
 	http.HandleFunc("/relay", setupRelay)
 	http.HandleFunc("/", homepage)

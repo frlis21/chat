@@ -1,10 +1,12 @@
 package client
 
 import (
+	"chat/client/utils"
+	"encoding/json"
 	"fmt"
 	"net/http"
-	"slices"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -43,33 +45,63 @@ func GetGroups() map[string]*Group {
 	return setupGroups()
 }
 
-func (g *Group) GetMessages() []*Message {
-	messages := make(map[string]*Message)
-	for _, relay := range *g.Relays {
-		resp, err := http.Get(fmt.Sprintf("http://%v/posts/%v%v%v", relay, g.Name, RELAY_SEPERATOR, g.UUID))
+func CreateGroup(name string) *Group {
+	g := NewGroup(name)
+	user, _ := GetCurrentUser()
+	for _, relay := range GetRelays() {
+		requestBody, err := json.Marshal(Message{
+			g.UUID,
+			g.UUID,
+			g.UUID,
+			user,
+			time.Now(),
+			g.Name,
+		})
+		fmt.Printf("body: %v\nerr: %v\n", string(requestBody), err)
 		if err != nil {
-			return []*Message{}
+			return nil
 		}
-		if resp.StatusCode == http.StatusOK {
-			return []*Message{}
-		}
-		data := ReadFullResponse(resp)
-		ms := Decode(data)
-		for id, msg := range ms {
-			_, ok := messages[id]
-			if !ok {
-				messages[id] = msg
-			}
+		resp, err := http.Post(
+			fmt.Sprintf("http://%v/posts", relay),
+			JSON_CONTENT_TYPE,
+			strings.NewReader(string(requestBody)),
+		)
+		if err != nil || resp.StatusCode != http.StatusCreated {
+			return nil
 		}
 	}
-	values := Values(messages)
-	slices.SortFunc[[]*Message, *Message](
-		values,
-		func(a, b *Message) int {
-			return a.Timestamp.Compare(b.Timestamp)
-		},
-	)
-	return values
+	return g
+
+}
+
+func (g *Group) GetMessages() []*Message {
+	// messages := make(map[string]*Message)
+	// for _, relay := range *g.Relays {
+	// 	resp, err := http.Get(fmt.Sprintf("http://%v/posts/%v%v%v", relay, g.Name, RELAY_SEPERATOR, g.UUID))
+	// 	if err != nil {
+	// 		return []*Message{}
+	// 	}
+	// 	if resp.StatusCode == http.StatusOK {
+	// 		return []*Message{}
+	// 	}
+	// 	data := utils.ReadFullResponse(resp)
+	// 	json.Unmarshal()
+	// 	for id, msg := range ms {
+	// 		_, ok := messages[id]
+	// 		if !ok {
+	// 			messages[id] = msg
+	// 		}
+	// 	}
+	// }
+	// values := utils.Values(messages)
+	// slices.SortFunc[[]*Message, *Message](
+	// 	values,
+	// 	func(a, b *Message) int {
+	// 		return a.Timestamp.Compare(b.Timestamp)
+	// 	},
+	// )
+	// return values
+	return []*Message{}
 }
 
 func (g *Group) SendMessage(m *Message) error {
@@ -107,6 +139,21 @@ func (g *Group) SendMessage(m *Message) error {
 		}
 	}
 	return nil
+}
+
+func SearchGroups(req *http.Request) []*Group {
+	groupName := req.FormValue("group_name")
+	foundGroups := make(map[string]*Group)
+	for _, relay := range GetRelays() {
+		knownGroups := relay.GroupSearch(groupName)
+		for _, group := range knownGroups {
+			_, ok := foundGroups[group.UUID]
+			if !ok {
+				foundGroups[group.UUID] = group
+			}
+		}
+	}
+	return utils.Values(foundGroups)
 }
 
 func (g *Group) AddRelay(r *Relay) {

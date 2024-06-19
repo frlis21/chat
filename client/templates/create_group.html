@@ -7,16 +7,10 @@
     </head>
     <body>
         <a href="/">Home</a>
-        <h1>{{.Group.Name}}<h1>
-        {{range .Messages}}
-            <b>{{.SentBy.Name}}</b>: {{.Content}}
-            <br>
-        {{end}}
-        <br>
+        <h1>Create Group<h1>
         <form method="post">
-            <input name="message" placeholder="Type your message here">
+            <input name="group_name" placeholder="Group Name">
             <button type="submit">Send</button>
         </form>
-        <b>{{.Group.ErrorMessage}}</b>
     </body>
 </html>

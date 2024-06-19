@@ -1,7 +1,9 @@
 package client
 
 import (
+	"chat/client/utils"
 	"fmt"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -57,6 +59,13 @@ func GetRelays() []*Relay {
 	}
 	relays = savedRelays
 	return relays
+}
+
+func (r *Relay) GroupSearch(name string) []*Group {
+	resp, _ := http.Get(fmt.Sprintf("http://%v/topics", r))
+	data := utils.ReadFullResponse(resp)
+	fmt.Printf("%v\n", data)
+	return []*Group{}
 }
 
 func (r *Relay) String() string {
