@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 type GroupPageContent struct {
@@ -39,7 +40,7 @@ func groupPostHandler(g *client.Group, req *http.Request) (GroupPageContent, err
 	if err != nil {
 		return GroupPageContent{}, errors.New(client.MISSING_USER)
 	}
-	m := client.NewMessage(content, user)
+	m := client.NewMessage(fmt.Sprintf("%v", g), g.Antecedent, content, time.Now(), user)
 	err = g.SendMessage(m)
 	return GroupPageContent{g, g.GetMessages()}, err
 }
@@ -66,4 +67,11 @@ func addRelay(req *http.Request) error {
 	}
 
 	return nil
+}
+
+func searchGroups(req *http.Request) []*client.Group {
+	// for _, relay := range client.GetRelays() {
+	// 	client.
+	// }
+	return []*client.Group{}
 }

@@ -58,3 +58,7 @@ func GetRelays() []*Relay {
 	relays = savedRelays
 	return relays
 }
+
+func (r *Relay) String() string {
+	return fmt.Sprintf("%v%v%v", r.Address, RELAY_SEPERATOR, r.Port)
+}

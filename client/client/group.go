@@ -3,10 +3,13 @@ package client
 import (
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/google/uuid"
 )
+
+const GROUPS_FILE_PATH string = BASE_DATA_PATH + "/groupdata"
 
 type Group struct {
 	Name         string
@@ -17,7 +20,6 @@ type Group struct {
 }
 
 var defaultGroups map[string]*Group = nil
-var defaultMessages []*Message = nil
 
 func setupGroups() map[string]*Group {
 	if defaultGroups != nil {
@@ -42,20 +44,39 @@ func GetGroups() map[string]*Group {
 }
 
 func (g *Group) GetMessages() []*Message {
-	if defaultMessages != nil {
-		return defaultMessages
+	messages := make(map[string]*Message)
+	for _, relay := range *g.Relays {
+		resp, err := http.Get(fmt.Sprintf("http://%v/posts/%v%v%v", relay, g.Name, RELAY_SEPERATOR, g.UUID))
+		if err != nil {
+			return []*Message{}
+		}
+		if resp.StatusCode == http.StatusOK {
+			return []*Message{}
+		}
+		data := ReadFullResponse(resp)
+		ms := Decode(data)
+		for id, msg := range ms {
+			_, ok := messages[id]
+			if !ok {
+				messages[id] = msg
+			}
+		}
 	}
-	m1 := NewMessage("Message Content 1", NewUser("DEFAULT 1", ID_EMPTY))
-	m2 := NewMessage("Message Content 2", NewUser("DEFAULT 2", ID_EMPTY))
-	defaultMessages = []*Message{m1, m2}
-	return defaultMessages
+	values := Values(messages)
+	slices.SortFunc[[]*Message, *Message](
+		values,
+		func(a, b *Message) int {
+			return a.Timestamp.Compare(b.Timestamp)
+		},
+	)
+	return values
 }
 
 func (g *Group) SendMessage(m *Message) error {
 	requestBody := fmt.Sprintf(
 		`{"antecedent": "%v", "author": "%v%v%v", "body": "%v", "relays": %v}`,
 		g.Antecedent,
-		m.SentBy.Name, USER_SEPERATOR, m.SentBy.UUID,
+		m.Author.Name, USER_SEPERATOR, m.Author.UUID,
 		m.Content,
 		strings.ReplaceAll(
 			strings.ReplaceAll(
@@ -74,20 +95,24 @@ func (g *Group) SendMessage(m *Message) error {
 	fmt.Printf("%v\n", requestBody)
 	for _, relay := range *g.Relays {
 		resp, err := http.Post(
-			fmt.Sprintf("%v/posts/%v%v%v", relay, g.Name, RELAY_SEPERATOR, g.UUID),
+			fmt.Sprintf("http://%v/posts/%v%v%v", relay, g.Name, RELAY_SEPERATOR, g.UUID),
 			JSON_CONTENT_TYPE,
 			strings.NewReader(requestBody),
 		)
 		if err != nil {
 			return err
 		}
-		if resp.StatusCode != 201 {
+		if resp.StatusCode != http.StatusCreated {
 			return fmt.Errorf("failed sending message to %v", relay)
 		}
 	}
 	return nil
 }
 
+func (g *Group) AddRelay(r *Relay) {
+	*g.Relays = append(*g.Relays, r)
+}
+
 func (g *Group) String() string {
-	return fmt.Sprintf("{\"Name\": \"%v\", \"UUID\": \"%v\"}", g.Name, g.UUID)
+	return fmt.Sprintf("%v%v%v", g.Name, ":", g.UUID)
 }
