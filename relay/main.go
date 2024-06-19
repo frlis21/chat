@@ -31,7 +31,7 @@ type PostStore = store.Store[string, Post]
 func main() {
 	// Need to start our own listener for dynamic port
 	// (as opposed to using ListenAndServe)
-	listener, err := net.Listen("tcp", "localhost:8888")
+	listener, err := net.Listen("tcp", "localhost:")
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -29,7 +29,7 @@ go build -o myclient
 ```
 ./myclient 8081
 ```
-6. In both clients, add the relay by specifying IP 127.0.0.1 and port 8888
+6. In both clients, add the relay by specifying IP 127.0.0.1 and whatever port was printed when the relay started.
 7. Create a group in client 1
 8. Search for the group name in client 2
 9. Both clients can join the group and start chatting.*
